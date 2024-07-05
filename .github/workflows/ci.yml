@@ -40,5 +40,5 @@ jobs:
     - name: Compile lua-${{ env.LUA_VERSION }}
       run: |
         cd lua-${{ env.LUA_VERSION }}
-        make generic
-        
+        make linux CC="${CROSS_COMPILE}gcc" AR="${CROSS_COMPILE}ar rcu" RANLIB="${CROSS_COMPILE}ranlib"
+
