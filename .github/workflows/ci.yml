@@ -41,4 +41,4 @@ jobs:
       run: |
         cd lua-${{ env.LUA_VERSION }}
         make generic
-        ninja -C build/$target lua_shared_lib
+        
