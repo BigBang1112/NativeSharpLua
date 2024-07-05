@@ -39,5 +39,5 @@ jobs:
     
     - name: Compile lua-${{ env.LUA_VERSION }}
       run: |
-        cmake -B build/$target -S lua-${{ env.LUA_VERSION }}/ -G Ninja -DENABLE_STATIC=0 -DENABLE_SHARED=1
+        make generic -B build/$target -S lua-${{ env.LUA_VERSION }}/ -G Ninja -DENABLE_STATIC=0 -DENABLE_SHARED=1
         ninja -C build/$target lua_shared_lib
