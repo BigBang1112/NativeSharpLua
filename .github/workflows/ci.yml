@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+    paths: [ ".github/workflows/ci.yml", "NativeSharpLua.sln" ]
+  pull_request:
+    branches: [ "main", "dev" ]
+    paths: [ ".github/workflows/ci.yml", "NativeSharpLua.sln" ]
+  workflow_dispatch:
+
+env:
+  LUA_VERSION: "5.4.7"
+
+jobs:
+  compile-lua:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        compiler:
+          - {target: windows-static-x86, src: lua.dll, dst: lua.dll, rid: win-x86}
+          - {target: windows-static-x64, src: lua.dll, dst: lua.dll, rid: win-x64}
+          - {target: linux-x64, src: lua.so.2.0.0, dst: lua.so, rid: linux-x64}
+          - {target: linux-armv6, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm}
+          - {target: linux-arm64, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm64}
+          - {target: web-wasm, src: lua.a, dst: lua.a, rid: browser-wasm}
+    
+    container:
+      image: dockcross/${{ matrix.compiler.target }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download and extract lua-${{ env.LUA_VERSION }}
+      run: | 
+        wget https://www.lua.org/ftp/lua-${{ env.LUA_VERSION }}.tar.gz
+        tar -xzvf lua-${{ env.LUA_VERSION }}.tar.gz
+    
+    - name: Compile lua-${{ env.LUA_VERSION }}
+      run: |
+        cmake -B build/$target -S lua-${{ env.LUA_VERSION }}/ -G Ninja -DENABLE_STATIC=0 -DENABLE_SHARED=1
+        ninja -C build/$target lua_shared_lib
