@@ -19,12 +19,21 @@ jobs:
         - {platform: x64, rid: win-x64}
 
     steps:
+    - name: Cache lua-${{ inputs.version }}
+      id: cache-lua
+      uses: actions/cache@v4
+      with:
+        path: runtimes
+        key: lua-${{ inputs.version }}-${{ matrix.compiler.rid }}
+
     - name: Download lua-${{ inputs.version }} source
+      if: steps.cache-lua.outputs.cache-hit != 'true'
       run: |
         Invoke-WebRequest -Uri "https://www.lua.org/ftp/lua-${{ inputs.version }}.tar.gz" -OutFile "lua.tar.gz"
         tar -xzvf lua.tar.gz
 
     - name: Build lua
+      if: steps.cache-lua.outputs.cache-hit != 'true'
       run: |
         cd lua-${{ inputs.version }}
         make mingw
@@ -55,14 +64,22 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+  
+    - name: Cache lua-${{ inputs.version }}
+      id: cache-lua
+      uses: actions/cache@v4
+      with:
+        path: runtimes
+        key: lua-${{ inputs.version }}-${{ matrix.compiler.rid }}
 
     - name: Download and extract lua
+      if: steps.cache-lua.outputs.cache-hit != 'true'
       run: | 
         wget https://www.lua.org/ftp/lua-${{ inputs.version }}.tar.gz
         tar -xzvf lua-${{ inputs.version }}.tar.gz
-    
+
     - name: Compile lua (Linux)
-      if: ${{ matrix.compiler.target != 'web-wasm' }}
+      if: steps.cache-lua.outputs.cache-hit != 'true' && matrix.compiler.target != 'web-wasm'
       run: |
         cd lua-${{ inputs.version }}/src
         make linux MYCFLAGS="-fPIC"
@@ -70,12 +87,13 @@ jobs:
         gcc -shared -o liblua.so -fPIC *.o -lm
         
     - name: Compile lua (WebAssembly)
-      if: ${{ matrix.compiler.target == 'web-wasm' }}
+      if: steps.cache-lua.outputs.cache-hit != 'true' && matrix.compiler.target == 'web-wasm'
       run: |
         cd lua-${{ inputs.version }}
         make generic CC='emcc -shared -s RELOCATABLE=1' AR='emar rcu' RANLIB='emranlib'
-    
+
     - name: Copy to runtimes
+      if: steps.cache-lua.outputs.cache-hit != 'true'
       run: |
         mkdir -p runtimes/${{ matrix.compiler.rid }}/native
         cp lua-${{ inputs.version }}/src/${{ matrix.compiler.src }} runtimes/${{ matrix.compiler.rid }}/native/${{ matrix.compiler.dst }}
