@@ -63,7 +63,7 @@ jobs:
     - name: Compile lua-${{ inputs.version }}
       run: |
         cd lua-${{ inputs.version }}
-        make generic CC="gcc" CFLAGS="-fPIC -O2 -Wall" LDFLAGS="-shared"
+        make "CFLAGS=-O2 -Wall -fPIC" "SYSCFLAGS=-DLUA_USE_LINUX" "MYLDFLAGS=-shared" "SYSLIBS=-ldl -Wl,-E" "TARGET=liblua.so" liblua.so
 
     - name: Upload lua-${{ inputs.version }}
       uses: actions/upload-artifact@v4
