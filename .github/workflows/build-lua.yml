@@ -37,7 +37,7 @@ jobs:
       run: |
         cd lua-${{ inputs.version }}
         if ("${{ matrix.compiler.platform }}" -eq "x86") {
-          & make mingw CC="gcc -std=gnu99 -m32"
+          & make mingw CC="i686-w64-mingw32-gcc -std=gnu99"
         } else {
           & make mingw
         }
