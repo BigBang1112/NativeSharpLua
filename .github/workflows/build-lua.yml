@@ -63,7 +63,7 @@ jobs:
     - name: Compile lua-${{ inputs.version }}
       run: |
         cd lua-${{ inputs.version }}
-        make linux MYCFLAGS="-fPIC" MYLDFLAGS="-shared"
+        make generic CC="gcc" CFLAGS="-fPIC -O2 -Wall" LDFLAGS="-shared"
 
     - name: Upload lua-${{ inputs.version }}
       uses: actions/upload-artifact@v4
