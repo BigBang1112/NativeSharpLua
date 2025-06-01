@@ -29,7 +29,7 @@ jobs:
         cd lua-${{ inputs.version }}
         make mingw
 
-    - name: Upload lua-${{ inputs.version }}
+    - name: Upload lua
       uses: actions/upload-artifact@v4
       with:
         name: lua-${{ inputs.version }}-${{ matrix.compiler.rid }}
@@ -53,12 +53,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Download and extract lua-${{ inputs.version }}
+    - name: Download and extract lua
       run: | 
         wget https://www.lua.org/ftp/lua-${{ inputs.version }}.tar.gz
         tar -xzvf lua-${{ inputs.version }}.tar.gz
     
-    - name: Compile lua-${{ inputs.version }} (shared)
+    - name: Compile lua (Linux)
       if: ${{ matrix.compiler.target != 'web-wasm' }}
       run: |
         cd lua-${{ inputs.version }}/src
@@ -66,13 +66,13 @@ jobs:
         rm luac.o
         gcc -shared -o liblua.so -fPIC *.o -lm
 
-    - name: Compile lua-${{ inputs.version }} (static)
+    - name: Compile lua (WebAssembly)
       if: ${{ matrix.compiler.target == 'web-wasm' }}
       run: |
         cd lua-${{ inputs.version }}
-        make generic CC='emcc -s WASM=1' AR='emar rcu' RANLIB='emranlib'
+        make generic CC='emcc -shared -s RELOCATABLE=1 WASM=1' AR='emar rcu' RANLIB='emranlib'
 
-    - name: Upload lua-${{ inputs.version }}
+    - name: Upload lua
       uses: actions/upload-artifact@v4
       with:
         name: lua-${{ inputs.version }}-${{ matrix.compiler.rid }}
