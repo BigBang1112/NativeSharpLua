@@ -70,7 +70,7 @@ jobs:
       if: ${{ matrix.compiler.target == 'web-wasm' }}
       run: |
         cd lua-${{ inputs.version }}
-        make generic CC='emcc -shared -s RELOCATABLE=1 WASM=1' AR='emar rcu' RANLIB='emranlib'
+        make generic CC='emcc -shared -s RELOCATABLE=1 -s WASM=1' AR='emar rcu' RANLIB='emranlib'
 
     - name: Upload lua
       uses: actions/upload-artifact@v4
