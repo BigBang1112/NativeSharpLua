@@ -42,12 +42,10 @@ jobs:
     strategy:
       matrix:
         compiler:
-          #- {target: windows-static-x86, make: mingw, src: lua.dll, dst: lua.dll, rid: win-x86}
-          #- {target: windows-static-x64, make: mingw, src: lua.dll, dst: lua.dll, rid: win-x64}
-          - {target: linux-x64, make: linux, src: lua.so.2.0.0, dst: lua.so, rid: linux-x64}
-          - {target: linux-armv6, make: linux, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm}
-          - {target: linux-arm64, make: linux, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm64}
-          - {target: web-wasm, make: linux, src: lua.a, dst: lua.a, rid: browser-wasm}
+          - {target: linux-x64, src: lua.so.2.0.0, dst: lua.so, rid: linux-x64}
+          - {target: linux-armv6, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm}
+          - {target: linux-arm64, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm64}
+          - {target: web-wasm, src: lua.a, dst: lua.a, rid: browser-wasm}
     
     container:
       image: dockcross/${{ matrix.compiler.target }}
@@ -60,12 +58,19 @@ jobs:
         wget https://www.lua.org/ftp/lua-${{ inputs.version }}.tar.gz
         tar -xzvf lua-${{ inputs.version }}.tar.gz
     
-    - name: Compile lua-${{ inputs.version }}
+    - name: Compile lua-${{ inputs.version }} (shared)
+      if: ${{ matrix.compiler.target != 'web-wasm' }}
       run: |
         cd lua-${{ inputs.version }}/src
         make linux MYCFLAGS="-fPIC"
         rm luac.o
         gcc -shared -o liblua.so -fPIC *.o -lm
+
+    - name: Compile lua-${{ inputs.version }} (static)
+      if: ${{ matrix.compiler.target == 'web-wasm' }}
+      run: |
+        cd lua-${{ inputs.version }}
+        make generic CC='emcc -s WASM=1' AR='emar rcu' RANLIB='emranlib'
 
     - name: Upload lua-${{ inputs.version }}
       uses: actions/upload-artifact@v4
