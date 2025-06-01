@@ -14,12 +14,12 @@ jobs:
     strategy:
       matrix:
         compiler:
-          - {target: windows-static-x86, src: lua.dll, dst: lua.dll, rid: win-x86}
-          - {target: windows-static-x64, src: lua.dll, dst: lua.dll, rid: win-x64}
-          - {target: linux-x64, src: lua.so.2.0.0, dst: lua.so, rid: linux-x64}
-          - {target: linux-armv6, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm}
-          - {target: linux-arm64, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm64}
-          - {target: web-wasm, src: lua.a, dst: lua.a, rid: browser-wasm}
+          - {target: windows-static-x86, make: mingw, src: lua.dll, dst: lua.dll, rid: win-x86}
+          - {target: windows-static-x64, make: mingw, src: lua.dll, dst: lua.dll, rid: win-x64}
+          - {target: linux-x64, make: linux, src: lua.so.2.0.0, dst: lua.so, rid: linux-x64}
+          - {target: linux-armv6, make: linux, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm}
+          - {target: linux-arm64, make: linux, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm64}
+          - {target: web-wasm, make: linux, src: lua.a, dst: lua.a, rid: browser-wasm}
     
     container:
       image: dockcross/${{ matrix.compiler.target }}
@@ -35,13 +35,11 @@ jobs:
     - name: Compile lua-${{ inputs.version }}
       run: |
         cd lua-${{ inputs.version }}
-        make linux CC="${CROSS_COMPILE}gcc" AR="${CROSS_COMPILE}ar rcu" RANLIB="${CROSS_COMPILE}ranlib"
-        mkdir -p runtimes/${{ matrix.compiler.rid }}/native
-        cp src/${{ matrix.compiler.src }} runtimes/${{ matrix.compiler.rid }}/native/${{ matrix.compiler.dst }}
+        make ${{ matrix.compiler.make }} CC="${CROSS_COMPILE}gcc" AR="${CROSS_COMPILE}ar rcu" RANLIB="${CROSS_COMPILE}ranlib"
 
     - name: Upload lua-${{ inputs.version }}
       uses: actions/upload-artifact@v4
       with:
         name: lua-${{ inputs.version }}-${{ matrix.compiler.rid }}
-        path: lua-${{ inputs.version }}/runtimes
+        path: .
         if-no-files-found: error
