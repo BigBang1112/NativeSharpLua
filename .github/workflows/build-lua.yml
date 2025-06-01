@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-lua-windows:
-    name: Build lua (Windows)
+    name: Build lua
     runs-on: windows-latest
 
     strategy:
@@ -28,24 +28,27 @@ jobs:
       run: |
         cd lua-${{ inputs.version }}
         make mingw
+        mkdir -p runtimes/${{ matrix.compiler.rid }}/native
+        cp src/lua54.dll runtimes/${{ matrix.compiler.rid }}/native/lua.dll
 
     - name: Upload lua
       uses: actions/upload-artifact@v4
       with:
         name: lua-${{ inputs.version }}-${{ matrix.compiler.rid }}
-        path: .
+        path: runtimes
         if-no-files-found: error
 
   build-lua-dockcross:
+    name: Build lua
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
         compiler:
-          - {target: linux-x64, src: lua.so.2.0.0, dst: lua.so, rid: linux-x64}
-          - {target: linux-armv6, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm}
-          - {target: linux-arm64, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm64}
-          - {target: web-wasm, src: lua.a, dst: lua.a, rid: browser-wasm}
+          - {target: linux-x64, src: liblua.so, dst: lua.so, rid: linux-x64}
+          - {target: linux-armv6, src: liblua.so, dst: lua.so, rid: linux-arm}
+          - {target: linux-arm64, src: liblua.so, dst: lua.so, rid: linux-arm64}
+          - {target: web-wasm, src: liblua.a, dst: lua.a, rid: browser-wasm}
     
     container:
       image: dockcross/${{ matrix.compiler.target }}
@@ -65,16 +68,21 @@ jobs:
         make linux MYCFLAGS="-fPIC"
         rm luac.o
         gcc -shared -o liblua.so -fPIC *.o -lm
-
+        
     - name: Compile lua (WebAssembly)
       if: ${{ matrix.compiler.target == 'web-wasm' }}
       run: |
         cd lua-${{ inputs.version }}
-        make generic CC='emcc -shared -s RELOCATABLE=1 -s WASM=1' AR='emar rcu' RANLIB='emranlib'
-
+        make generic CC='emcc -shared -s RELOCATABLE=1' AR='emar rcu' RANLIB='emranlib'
+    
+    - name: Copy to runtimes
+      run: |
+        mkdir -p runtimes/${{ matrix.compiler.rid }}/native
+        cp lua-${{ inputs.version }}/src/${{ matrix.compiler.src }} runtimes/${{ matrix.compiler.rid }}/native/${{ matrix.compiler.dst }}
+    
     - name: Upload lua
       uses: actions/upload-artifact@v4
       with:
         name: lua-${{ inputs.version }}-${{ matrix.compiler.rid }}
-        path: .
+        path: runtimes
         if-no-files-found: error
