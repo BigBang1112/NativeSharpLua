@@ -36,10 +36,12 @@ jobs:
       run: |
         cd lua-${{ inputs.version }}
         make linux CC="${CROSS_COMPILE}gcc" AR="${CROSS_COMPILE}ar rcu" RANLIB="${CROSS_COMPILE}ranlib"
+        mkdir -p runtimes/${{ matrix.compiler.rid }}/native
+        cp src/${{ matrix.compiler.src }} runtimes/${{ matrix.compiler.rid }}/native/${{ matrix.compiler.dst }}
 
     - name: Upload lua-${{ inputs.version }}
       uses: actions/upload-artifact@v4
       with:
         name: lua-${{ inputs.version }}-${{ matrix.compiler.rid }}
-        path: .
+        path: lua-${{ inputs.version }}/runtimes
         if-no-files-found: error
