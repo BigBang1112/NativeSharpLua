@@ -64,6 +64,7 @@ jobs:
       run: |
         cd lua-${{ inputs.version }}/src
         make linux MYCFLAGS="-fPIC"
+        rm luac.o
         gcc -shared -o liblua.so -fPIC *.o -lm
 
     - name: Upload lua-${{ inputs.version }}
