@@ -14,8 +14,8 @@ permissions:
 
 jobs:
   build-and-test:
-    name: Build lz4 ${{ vars.LUA_VERSION }} package + test
+    name: Build lua ${{ vars.LUA_VERSION }} package + test
     uses: ./.github/workflows/build-package.yml
     with:
-      version: ${{ vars.LZ4_VERSION }}
+      version: ${{ vars.LUA_VERSION }}
       runs-on: "['ubuntu-latest', 'windows-latest']"
