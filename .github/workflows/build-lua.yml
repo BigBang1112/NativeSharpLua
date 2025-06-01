@@ -36,12 +36,12 @@ jobs:
       if: steps.cache-lua.outputs.cache-hit != 'true'
       run: |
         cd lua-${{ inputs.version }}
-        if [ "${{ matrix.compiler.platform }}" = "x86" ]; then
-          make mingw CC="gcc -m32";
-        else
-          make mingw;
-        fi
-        mkdir -p ../runtimes/${{ matrix.compiler.rid }}/native
+        if ("${{ matrix.compiler.platform }}" -eq "x86") {
+          & make mingw CC="gcc -m32"
+        } else {
+          & make mingw
+        }
+        mkdir ../runtimes/${{ matrix.compiler.rid }}/native
         cp src/lua54.dll ../runtimes/${{ matrix.compiler.rid }}/native/lua.dll
 
     - name: Upload lua
