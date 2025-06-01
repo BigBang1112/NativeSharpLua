@@ -8,14 +8,47 @@ on:
         type: string
 
 jobs:
-  compile-lua:
+  build-lua-windows:
+    name: Build lua (Windows)
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        compiler:
+        - {platform: x86, rid: win-x86}
+        - {platform: x64, rid: win-x64}
+
+    steps:
+    - name: Download lua-${{ inputs.version }} source
+      run: |
+        Invoke-WebRequest -Uri "https://www.lua.org/ftp/lua-${{ inputs.version }}.tar.gz" -OutFile "lua.tar.gz"
+        tar -xzvf lua.tar.gz
+
+    - name: Set up MinGW
+      uses: egor-tensin/setup-mingw@v2
+      with:
+        platform: ${{ matrix.compiler.platform }}
+
+    - name: Build lua
+      run: |
+        cd lua-${{ inputs.version }}
+        make mingw
+        
+    - name: Upload lua-${{ inputs.version }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: lua-${{ inputs.version }}-${{ matrix.compiler.rid }}
+        path: .
+        if-no-files-found: error
+
+  build-lua-dockcross:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
         compiler:
-          - {target: windows-static-x86, make: mingw, src: lua.dll, dst: lua.dll, rid: win-x86}
-          - {target: windows-static-x64, make: mingw, src: lua.dll, dst: lua.dll, rid: win-x64}
+          #- {target: windows-static-x86, make: mingw, src: lua.dll, dst: lua.dll, rid: win-x86}
+          #- {target: windows-static-x64, make: mingw, src: lua.dll, dst: lua.dll, rid: win-x64}
           - {target: linux-x64, make: linux, src: lua.so.2.0.0, dst: lua.so, rid: linux-x64}
           - {target: linux-armv6, make: linux, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm}
           - {target: linux-arm64, make: linux, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm64}
@@ -35,7 +68,7 @@ jobs:
     - name: Compile lua-${{ inputs.version }}
       run: |
         cd lua-${{ inputs.version }}
-        make guess
+        make ${{ matrix.compiler.make }}
 
     - name: Upload lua-${{ inputs.version }}
       uses: actions/upload-artifact@v4
