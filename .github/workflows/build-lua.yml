@@ -62,8 +62,9 @@ jobs:
     
     - name: Compile lua-${{ inputs.version }}
       run: |
-        cd lua-${{ inputs.version }}
-        make linux MYCFLAGS="-fPIC" && gcc -shared -o liblua.so -fPIC *.o -lm
+        cd lua-${{ inputs.version }}/src
+        make linux MYCFLAGS="-fPIC"
+        gcc -shared -o liblua.so -fPIC *.o -lm
 
     - name: Upload lua-${{ inputs.version }}
       uses: actions/upload-artifact@v4
