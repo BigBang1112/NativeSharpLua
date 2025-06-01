@@ -63,7 +63,7 @@ jobs:
     - name: Compile lua-${{ inputs.version }}
       run: |
         cd lua-${{ inputs.version }}
-        make ${{ matrix.compiler.make }}
+        make ${{ matrix.compiler.make }} MYCFLAGS="-fPIC" MYLDFLAGS="-shared"
 
     - name: Upload lua-${{ inputs.version }}
       uses: actions/upload-artifact@v4
