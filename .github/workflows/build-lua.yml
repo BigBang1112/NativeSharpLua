@@ -54,10 +54,10 @@ jobs:
     strategy:
       matrix:
         compiler:
-          - {target: linux-x64, src: liblua.so, dst: lua.so, rid: linux-x64}
-          - {target: linux-armv6, src: liblua.so, dst: lua.so, rid: linux-arm}
-          - {target: linux-arm64, src: liblua.so, dst: lua.so, rid: linux-arm64}
-          - {target: web-wasm, src: liblua.a, dst: lua.a, rid: browser-wasm}
+          - {target: linux-x64, src: liblua.so, dst: liblua.so, rid: linux-x64}
+          - {target: linux-armv6, src: liblua.so, dst: liblua.so, rid: linux-arm}
+          - {target: linux-arm64, src: liblua.so, dst: liblua.so, rid: linux-arm64}
+          - {target: web-wasm, src: liblua.a, dst: liblua.a, rid: browser-wasm}
     
     container:
       image: dockcross/${{ matrix.compiler.target }}

@@ -1,11 +1,51 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <PackageId>NativeSharpLua</PackageId>
+        <Authors>BigBang1112</Authors>
+        <Description>Wrap of the Lua library with NativeAOT and transparent C library build.</Description>
+        <Copyright>Copyright (c) 2025 Petr Pivoňka</Copyright>
+        <PackageProjectUrl>https://github.com/BigBang1112/NativeSharpLua</PackageProjectUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageTags>lua, nativesharplua, nativeaot, c</PackageTags>
+        <PackageReleaseNotes></PackageReleaseNotes>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    </PropertyGroup>
 
     <PropertyGroup>
-        <TargetFrameworks>net9.0;net8.0;net6.0;netstandard2.0</TargetFrameworks>
+        <Version>0.1.0</Version>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <TargetFrameworks>net9.0;net8.0</TargetFrameworks>
         <RuntimeIdentifiers>win-x64;linux-x64;linux-arm;linux-arm64;browser-wasm</RuntimeIdentifiers>
         <LangVersion>13</LangVersion>
+
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <IsTrimmable Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">true</IsTrimmable>
+        <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net7.0'))">true</IsAotCompatible>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
     </PropertyGroup>
+    
+    <ItemGroup>
+        <None Include="..\README.md" Pack="true" PackagePath="\" />
+        <None Include="..\runtimes\**" Pack="True" PackagePath="runtimes\" />
+        <None Include="build\NativeSharpLua.targets" Pack="true" PackagePath="build\" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Folder Include="build\" />
+    </ItemGroup>
 
 </Project>

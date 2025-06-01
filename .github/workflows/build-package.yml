@@ -48,7 +48,6 @@ jobs:
         dotnet-version: |
           9.0.x
           8.0.x
-          6.0.x
 
     - name: Restore dependencies
       run: dotnet restore
@@ -59,14 +58,14 @@ jobs:
     - name: Setup tests (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        for version in 9.0 8.0 6.0; do
+        for version in 9.0 8.0; do
           cp -r runtimes/linux-x64/native/* "NativeSharpLua.Tests/bin/Release/net${version}"
         done
     
     - name: Setup tests (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        $versions = @('9.0', '8.0', '6.0')
+        $versions = @('9.0', '8.0')
         foreach ($version in $versions) {
           Copy-Item -Path 'runtimes/win-x64/native/*' -Destination "NativeSharpLua.Tests/bin/Release/net$version" -Recurse
         }
