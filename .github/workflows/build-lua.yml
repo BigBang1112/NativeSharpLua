@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         compiler:
-        - {platform: x86, rid: win-x86}
+        #- {platform: x86, rid: win-x86}
         - {platform: x64, rid: win-x64}
 
     steps:
@@ -36,12 +36,7 @@ jobs:
       if: steps.cache-lua.outputs.cache-hit != 'true'
       run: |
         cd lua-${{ inputs.version }}
-        gcc -v -Q --help=target
-        if ("${{ matrix.compiler.platform }}" -eq "x86") {
-          & make mingw CC="i686-w64-mingw32-gcc -std=gnu99"
-        } else {
-          & make mingw
-        }
+        make mingw
         mkdir ../runtimes/${{ matrix.compiler.rid }}/native
         cp src/lua54.dll ../runtimes/${{ matrix.compiler.rid }}/native/lua.dll
 
