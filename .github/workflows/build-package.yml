@@ -1,0 +1,64 @@
+name: Build lua package
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: true
+      runs-on:
+        type: string
+        required: true
+      upload_package:
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  build-lua:
+    name: Build lua ${{ inputs.version }}
+    uses: ./.github/workflows/build-lua.yml
+    with:
+      version: ${{ inputs.version }}
+
+  build-and-test:
+    needs: build-lua
+
+    name: Build package + test
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: ${{ fromJson(inputs.runs-on) }}
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download lua build
+      uses: actions/download-artifact@v4
+      with:
+        path: runtimes
+        merge-multiple: true
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          9.0.x
+          8.0.x
+          6.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build -c Release --no-restore -p:ContinuousIntegrationBuild=true
+
+    - name: Upload package
+      if: ${{ inputs.upload_package }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: build
+        path: NativeSharpLua/bin/Release/*.*nupkg

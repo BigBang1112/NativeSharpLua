@@ -1,0 +1,38 @@
+name: Build lua
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+
+jobs:
+  compile-lua:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        compiler:
+          - {target: windows-static-x86, src: lua.dll, dst: lua.dll, rid: win-x86}
+          - {target: windows-static-x64, src: lua.dll, dst: lua.dll, rid: win-x64}
+          - {target: linux-x64, src: lua.so.2.0.0, dst: lua.so, rid: linux-x64}
+          - {target: linux-armv6, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm}
+          - {target: linux-arm64, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm64}
+          - {target: web-wasm, src: lua.a, dst: lua.a, rid: browser-wasm}
+    
+    container:
+      image: dockcross/${{ matrix.compiler.target }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download and extract lua-${{ inputs.version }}
+      run: | 
+        wget https://www.lua.org/ftp/lua-${{ inputs.version }}.tar.gz
+        tar -xzvf lua-${{ inputs.version }}.tar.gz
+    
+    - name: Compile lua-${{ inputs.version }}
+      run: |
+        cd lua-${{ inputs.version }}
+        make linux CC="${CROSS_COMPILE}gcc" AR="${CROSS_COMPILE}ar rcu" RANLIB="${CROSS_COMPILE}ranlib"

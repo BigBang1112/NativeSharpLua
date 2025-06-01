@@ -3,42 +3,19 @@ name: CI
 on:
   push:
     branches: [ "main", "dev" ]
-    paths: [ ".github/workflows/ci.yml", "NativeSharpLua.sln" ]
+    paths: [ ".github/workflows/*.yml", "NativeSharpLua/**", "NativeSharpLua.Tests/**", "NativeSharpLua.sln" ]
   pull_request:
     branches: [ "main", "dev" ]
-    paths: [ ".github/workflows/ci.yml", "NativeSharpLua.sln" ]
+    paths: [ ".github/workflows/*.yml", "NativeSharpLua/**", "NativeSharpLua.Tests/**", "NativeSharpLua.sln" ]
   workflow_dispatch:
 
-env:
-  LUA_VERSION: "5.4.7"
+permissions:
+  contents: read
 
 jobs:
-  compile-lua:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        compiler:
-          - {target: windows-static-x86, src: lua.dll, dst: lua.dll, rid: win-x86}
-          - {target: windows-static-x64, src: lua.dll, dst: lua.dll, rid: win-x64}
-          - {target: linux-x64, src: lua.so.2.0.0, dst: lua.so, rid: linux-x64}
-          - {target: linux-armv6, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm}
-          - {target: linux-arm64, src: lua.so.2.0.0, dst: lua.so, rid: linux-arm64}
-          - {target: web-wasm, src: lua.a, dst: lua.a, rid: browser-wasm}
-    
-    container:
-      image: dockcross/${{ matrix.compiler.target }}
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Download and extract lua-${{ env.LUA_VERSION }}
-      run: | 
-        wget https://www.lua.org/ftp/lua-${{ env.LUA_VERSION }}.tar.gz
-        tar -xzvf lua-${{ env.LUA_VERSION }}.tar.gz
-    
-    - name: Compile lua-${{ env.LUA_VERSION }}
-      run: |
-        cd lua-${{ env.LUA_VERSION }}
-        make linux CC="${CROSS_COMPILE}gcc" AR="${CROSS_COMPILE}ar rcu" RANLIB="${CROSS_COMPILE}ranlib"
-
+  build-and-test:
+    name: Build lz4 ${{ vars.LUA_VERSION }} package + test
+    uses: ./.github/workflows/build-package.yml
+    with:
+      version: ${{ vars.LZ4_VERSION }}
+      runs-on: "['ubuntu-latest', 'windows-latest']"
