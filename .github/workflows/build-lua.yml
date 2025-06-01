@@ -24,16 +24,11 @@ jobs:
         Invoke-WebRequest -Uri "https://www.lua.org/ftp/lua-${{ inputs.version }}.tar.gz" -OutFile "lua.tar.gz"
         tar -xzvf lua.tar.gz
 
-    - name: Set up MinGW
-      uses: egor-tensin/setup-mingw@v2
-      with:
-        platform: ${{ matrix.compiler.platform }}
-
     - name: Build lua
       run: |
         cd lua-${{ inputs.version }}
         make mingw
-        
+
     - name: Upload lua-${{ inputs.version }}
       uses: actions/upload-artifact@v4
       with:
