@@ -145,8 +145,14 @@ internal static partial class LuaC
     [LibraryImport(LibName, StringMarshalling = StringMarshalling.Utf8)]
     public static partial void lua_setfield(lua_State L, int index, string k);
 
+    [LibraryImport(LibName, StringMarshalling = StringMarshalling.Utf8)]
+    public static partial LuaType lua_getfield(lua_State L, int index, string k);
+
     [LibraryImport(LibName)]
     public static partial void lua_settable(lua_State L, int index);
+
+    [LibraryImport(LibName)]
+    public static partial LuaType lua_gettable(lua_State L, int index);
 
     [LibraryImport(LibName)]
     public static partial void lua_settop(lua_State L, int index);
