@@ -29,6 +29,8 @@ public class LuaEngine
 
     public lua_CFunction PrintFunc { get; init; } = DefaultPrintFunc;
 
+    public LuaObjectRegistry ObjectRegistry { get; }
+
     public LuaEngine() : this(LuaLibrary.None, LuaLibrary.None) { }
 
     public LuaEngine(LuaLibrary loadLibs, LuaLibrary preloadLibs)
@@ -38,6 +40,8 @@ public class LuaEngine
         LuaCAux.luaL_openselectedlibs(state, (int)loadLibs, (int)preloadLibs);
 
         Register();
+
+        ObjectRegistry = new LuaObjectRegistry(state);
     }
 
     private void Register()
@@ -53,26 +57,5 @@ public class LuaEngine
         {
             throw new LuaException(LuaC.lua_tostring(state) ?? "Unknown error");
         }
-    }
-
-    public void RegisterType(Type type)
-    {
-        ArgumentNullException.ThrowIfNull(type);
-
-        LuaObjectRegistry.CreateMetatable(state, type);
-    }
-
-    public void RegisterType<T>()
-    {
-        RegisterType(typeof(T));
-    }
-
-    public void RegisterObject(object obj, string name)
-    {
-        ArgumentNullException.ThrowIfNull(obj);
-        ArgumentException.ThrowIfNullOrEmpty(name);
-
-        LuaObjectRegistry.CreateObjectUserData(state, obj);
-        LuaC.lua_setglobal(state, name);
     }
 }

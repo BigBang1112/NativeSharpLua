@@ -6,13 +6,11 @@ using static NativeSharpLua.LuaCTypes;
 
 namespace NativeSharpLua;
 
-internal static class LuaObjectRegistry
+public sealed class LuaObjectRegistry
 {
-    private static readonly ConcurrentDictionary<nint, object> objects = new();
     private static readonly ConcurrentDictionary<Type, string> typeNames = new();
-    private static int nextId = 1;
 
-    // Dictionary for efficient numeric type conversions
+    // Efficient numeric type conversions
     private static readonly Dictionary<Type, Func<lua_State, int, object>> numericConverters = new()
     {
         [typeof(int)] = (state, index) => LuaC.lua_tointeger(state, index),
@@ -28,35 +26,64 @@ internal static class LuaObjectRegistry
         [typeof(sbyte)] = (state, index) => (sbyte)LuaC.lua_tointeger(state, index)
     };
 
+    private readonly lua_State state;
+    private readonly ConcurrentDictionary<nint, object> objects = new();
+    private int nextId = 1;
+
+    internal LuaObjectRegistry(lua_State state)
+    {
+        this.state = state;
+    }
+
+    public void RegisterType(Type type)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+        CreateMetatable(type);
+    }
+
+    public void RegisterType<T>()
+    {
+        RegisterType(typeof(T));
+    }
+
+    public void RegisterObject(object obj, string name)
+    {
+        ArgumentNullException.ThrowIfNull(obj);
+        ArgumentException.ThrowIfNullOrEmpty(name);
+
+        CreateObjectUserData(obj);
+        LuaC.lua_setglobal(state, name);
+    }
+
     private static string GetTypeName(Type type)
     {
         return typeNames.GetOrAdd(type, t => $"dotnet_{t.FullName?.Replace('.', '_')}");
     }
 
-    public static object? GetObject(nint id)
+    private object? GetObject(nint id)
     {
         return objects.TryGetValue(id, out var wrapper) ? wrapper : null;
     }
 
-    private static object? GetManagedObject(IntPtr userDataPtr)
+    private object? GetManagedObject(IntPtr userDataPtr)
     {
         var objectId = Marshal.ReadIntPtr(userDataPtr);
         return GetObject(objectId);
     }
 
-    public static nint RegisterObject(object obj)
+    private nint RegisterObject(object obj)
     {
         var id = Interlocked.Increment(ref nextId);
         objects[id] = obj;
         return id;
     }
 
-    public static bool UnregisterObject(nint id)
+    private bool UnregisterObject(nint id)
     {
         return objects.TryRemove(id, out _);
     }
 
-    public static void CreateMetatable(lua_State state, Type type)
+    private void CreateMetatable(Type type)
     {
         var typeName = GetTypeName(type);
 
@@ -90,7 +117,7 @@ internal static class LuaObjectRegistry
     }
 
     [RequiresUnreferencedCode("Uses reflection to access members of objects.")]
-    private static int IndexMetamethod(lua_State state)
+    private int IndexMetamethod(lua_State state)
     {
         try
         {
@@ -164,7 +191,7 @@ internal static class LuaObjectRegistry
     }
 
     [RequiresUnreferencedCode("Uses reflection to access members of objects.")]
-    private static int NewIndexMetamethod(lua_State state)
+    private int NewIndexMetamethod(lua_State state)
     {
         try
         {
@@ -221,7 +248,7 @@ internal static class LuaObjectRegistry
         }
     }
 
-    private static int ToStringMetamethod(lua_State state)
+    private int ToStringMetamethod(lua_State state)
     {
         try
         {
@@ -252,7 +279,7 @@ internal static class LuaObjectRegistry
         }
     }
 
-    private static int GCMetamethod(lua_State state)
+    private int GCMetamethod(lua_State state)
     {
         try
         {
@@ -273,7 +300,7 @@ internal static class LuaObjectRegistry
     }
 
     [RequiresUnreferencedCode("Uses reflection to access members of objects.")]
-    private static int MethodCallMetamethod(lua_State state)
+    private int MethodCallMetamethod(lua_State state)
     {
         try
         {
@@ -362,7 +389,7 @@ internal static class LuaObjectRegistry
         }
     }
 
-    private static void PushValue(lua_State state, object? value)
+    private void PushValue(lua_State state, object? value)
     {
         switch (value)
         {
@@ -391,7 +418,7 @@ internal static class LuaObjectRegistry
         }
     }
 
-    private static object? PopValue(lua_State state, int index, Type targetType)
+    private object? PopValue(lua_State state, int index, Type targetType)
     {
         var luaType = LuaC.lua_type(state, index);
 
@@ -420,7 +447,7 @@ internal static class LuaObjectRegistry
         return LuaC.lua_tonumber(state, index);
     }
 
-    public static void CreateObjectUserData(lua_State state, object obj)
+    private void CreateObjectUserData(lua_State state, object obj)
     {
         var objectId = RegisterObject(obj);
         var type = obj.GetType();
@@ -431,13 +458,18 @@ internal static class LuaObjectRegistry
         Marshal.WriteIntPtr(userDataPtr, objectId);
 
         // Create metatable if it doesn't exist
-        CreateMetatable(state, type);
+        CreateMetatable(type);
 
         // Set the metatable for the userdata
         LuaCAux.luaL_setmetatable(state, typeName);
     }
 
-    private static object? GetUserDataObject(lua_State state, int index)
+    private void CreateObjectUserData(object obj)
+    {
+        CreateObjectUserData(state, obj);
+    }
+
+    private object? GetUserDataObject(lua_State state, int index)
     {
         var userDataPtr = LuaC.lua_touserdata(state, index);
 
