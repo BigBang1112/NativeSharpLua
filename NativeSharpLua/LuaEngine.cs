@@ -29,11 +29,13 @@ public class LuaEngine
 
     public lua_CFunction PrintFunc { get; init; } = DefaultPrintFunc;
 
-    public LuaEngine()
+    public LuaEngine() : this(LuaLibrary.None, LuaLibrary.None) { }
+
+    public LuaEngine(LuaLibrary loadLibs, LuaLibrary preloadLibs)
     {
         state = LuaCAux.luaL_newstate();
 
-        LuaCAux.luaL_openlibs(state);
+        LuaCAux.luaL_openselectedlibs(state, (int)loadLibs, (int)preloadLibs);
 
         Register();
     }

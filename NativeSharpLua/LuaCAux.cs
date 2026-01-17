@@ -14,7 +14,10 @@ internal static partial class LuaCAux
     public static partial lua_State luaL_newstate();
 
     [LibraryImport(LibName)]
-    public static partial void luaL_openlibs(lua_State L);
+    public static partial void luaL_openselectedlibs(lua_State L, int load, int preload);
+
+    public static void luaL_openlibs(lua_State L)
+        => luaL_openselectedlibs(L, 0, 0);
 
     [LibraryImport(LibName, StringMarshalling = StringMarshalling.Utf8)]
     public static partial LuaStatusCode luaL_loadstring(lua_State L, string str);
