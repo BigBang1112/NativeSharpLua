@@ -223,11 +223,18 @@ public sealed class LuaObjectRegistry
 
             // Try to find property
             var property = type.GetProperty(key, BindingFlags.Public | BindingFlags.Instance);
-            if (property?.CanWrite == true)
+            if (property is not null)
             {
-                var value = PopValue(state, 3, property.PropertyType);
-                property.SetValue(dotnetObject, value);
-                return 0;
+                if (property.CanWrite)
+                {
+                    var value = PopValue(state, 3, property.PropertyType);
+                    property.SetValue(dotnetObject, value);
+                    return 0;
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Property '{key}' is read-only.");
+                }
             }
 
             // Try to find field
