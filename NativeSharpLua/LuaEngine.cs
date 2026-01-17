@@ -54,4 +54,25 @@ public class LuaEngine
             throw new LuaException(LuaC.lua_tostring(state) ?? "Unknown error");
         }
     }
+
+    public void RegisterType(Type type)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+
+        LuaObjectRegistry.CreateMetatable(state, type);
+    }
+
+    public void RegisterType<T>()
+    {
+        RegisterType(typeof(T));
+    }
+
+    public void RegisterObject(object obj, string name)
+    {
+        ArgumentNullException.ThrowIfNull(obj);
+        ArgumentException.ThrowIfNullOrEmpty(name);
+
+        LuaObjectRegistry.CreateObjectUserData(state, obj);
+        LuaC.lua_setglobal(state, name);
+    }
 }

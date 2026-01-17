@@ -158,4 +158,12 @@ internal static partial class LuaC
 
     [LibraryImport(LibName)]
     public static partial nint lua_topointer(lua_State L, int index);
+
+    [LibraryImport(LibName)]
+    public static partial nint lua_newuserdatauv(lua_State L, nint size, int nuvalue = 1);
+
+    [LibraryImport(LibName)]
+    public static partial nint lua_touserdata(lua_State L, int index);
+
+    public static int lua_upvalueindex(int i) => -(int.MaxValue / 2 + 1000) - i;
 }

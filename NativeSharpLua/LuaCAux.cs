@@ -67,4 +67,10 @@ internal static partial class LuaCAux
 
     [LibraryImport(LibName)]
     public static partial int luaL_ref(lua_State L, int t);
+
+    [LibraryImport(LibName, StringMarshalling = StringMarshalling.Utf8)]
+    public static partial int luaL_newmetatable(lua_State L, string tname);
+
+    [LibraryImport(LibName, StringMarshalling = StringMarshalling.Utf8)]
+    public static partial void luaL_setmetatable(lua_State L, string tname);
 }
