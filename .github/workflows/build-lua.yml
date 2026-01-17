@@ -38,7 +38,7 @@ jobs:
         cd lua-${{ inputs.version }}
         make mingw
         mkdir ../runtimes/${{ matrix.compiler.rid }}/native
-        cp src/lua54.dll ../runtimes/${{ matrix.compiler.rid }}/native/lua.dll
+        cp src/lua55.dll ../runtimes/${{ matrix.compiler.rid }}/native/lua.dll
 
     - name: Upload lua
       uses: actions/upload-artifact@v4
