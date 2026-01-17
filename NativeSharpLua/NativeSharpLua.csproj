@@ -3,7 +3,7 @@
         <PackageId>NativeSharpLua</PackageId>
         <Authors>BigBang1112</Authors>
         <Description>Wrap of the Lua library with NativeAOT and transparent C library build.</Description>
-        <Copyright>Copyright (c) 2025 Petr Pivoňka</Copyright>
+        <Copyright>Copyright (c) 2026 Petr Pivoňka</Copyright>
         <PackageProjectUrl>https://github.com/BigBang1112/NativeSharpLua</PackageProjectUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageTags>lua, nativesharplua, nativeaot, c</PackageTags>
@@ -17,14 +17,14 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <TargetFrameworks>net9.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net10.0;net9.0;net8.0</TargetFrameworks>
         <RuntimeIdentifiers>win-x64;linux-x64;linux-arm;linux-arm64;browser-wasm</RuntimeIdentifiers>
-        <LangVersion>13</LangVersion>
+        <LangVersion>14</LangVersion>
 
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <IsTrimmable Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">true</IsTrimmable>
-        <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net7.0'))">true</IsAotCompatible>
+        <IsTrimmable>true</IsTrimmable>
+        <IsAotCompatible>true</IsAotCompatible>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -41,11 +41,8 @@
     <ItemGroup>
         <None Include="..\README.md" Pack="true" PackagePath="\" />
         <None Include="..\runtimes\**" Pack="True" PackagePath="runtimes\" />
-        <None Include="build\NativeSharpLua.targets" Pack="true" PackagePath="build\" />
-    </ItemGroup>
-    
-    <ItemGroup>
-      <Folder Include="build\" />
+        <None Include="buildTransitive\NativeSharpLua.targets" Pack="true" PackagePath="buildTransitive\NativeSharpLua.targets" />
+        <None Include="buildTransitive\NativeSharpLua.targets" Pack="true" PackagePath="build\NativeSharpLua.targets" />
     </ItemGroup>
 
 </Project>

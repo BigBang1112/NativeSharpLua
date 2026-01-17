@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="NativeSharpLua.Tests/NativeSharpLua.Tests.csproj" />
+  <Project Path="NativeSharpLua/NativeSharpLua.csproj" />
+</Solution>
