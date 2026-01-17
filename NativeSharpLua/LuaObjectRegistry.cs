@@ -2,12 +2,17 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 using static NativeSharpLua.LuaCTypes;
 
 namespace NativeSharpLua;
 
 public sealed class LuaObjectRegistry
 {
+    private const string UsesReflection = "Uses reflection to access members of objects.";
+
     private static readonly ConcurrentDictionary<Type, string> typeNames = new();
 
     // Efficient numeric type conversions
@@ -26,6 +31,12 @@ public sealed class LuaObjectRegistry
         [typeof(sbyte)] = (state, index) => (sbyte)LuaC.lua_tointeger(state, index)
     };
 
+    private static readonly JsonSerializerOptions jsonOptions = new()
+    {
+        WriteIndented = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
     private readonly lua_State state;
     private readonly ConcurrentDictionary<nint, object> objects = new();
     private int nextId = 1;
@@ -35,17 +46,23 @@ public sealed class LuaObjectRegistry
         this.state = state;
     }
 
+    [RequiresUnreferencedCode(UsesReflection)]
+    [RequiresDynamicCode(UsesReflection)]
     public void RegisterType(Type type)
     {
         ArgumentNullException.ThrowIfNull(type);
         CreateMetatable(type);
     }
 
+    [RequiresUnreferencedCode(UsesReflection)]
+    [RequiresDynamicCode(UsesReflection)]
     public void RegisterType<T>()
     {
         RegisterType(typeof(T));
     }
 
+    [RequiresUnreferencedCode(UsesReflection)]
+    [RequiresDynamicCode(UsesReflection)]
     public void RegisterObject(object obj, string name)
     {
         ArgumentNullException.ThrowIfNull(obj);
@@ -83,6 +100,8 @@ public sealed class LuaObjectRegistry
         return objects.TryRemove(id, out _);
     }
 
+    [RequiresUnreferencedCode(UsesReflection)]
+    [RequiresDynamicCode(UsesReflection)]
     private void CreateMetatable(Type type)
     {
         var typeName = GetTypeName(type);
@@ -116,7 +135,8 @@ public sealed class LuaObjectRegistry
         LuaC.lua_pop(state, 1); // Pop metatable
     }
 
-    [RequiresUnreferencedCode("Uses reflection to access members of objects.")]
+    [RequiresUnreferencedCode(UsesReflection)]
+    [RequiresDynamicCode(UsesReflection)]
     private int IndexMetamethod(lua_State state)
     {
         try
@@ -147,6 +167,15 @@ public sealed class LuaObjectRegistry
             }
 
             var type = dotnetObject.GetType();
+
+            // Handle special dumpJSON method
+            if (key == "dumpJSON")
+            {
+                // Create a closure that captures the object ID
+                LuaC.lua_pushnumber(state, objectId);
+                LuaC.lua_pushcclosure(state, DumpJsonMetamethod, 1);
+                return 1;
+            }
 
             // Try to find property first
             var property = type.GetProperty(key, BindingFlags.Public | BindingFlags.Instance);
@@ -190,7 +219,7 @@ public sealed class LuaObjectRegistry
         }
     }
 
-    [RequiresUnreferencedCode("Uses reflection to access members of objects.")]
+    [RequiresUnreferencedCode(UsesReflection)]
     private int NewIndexMetamethod(lua_State state)
     {
         try
@@ -306,7 +335,8 @@ public sealed class LuaObjectRegistry
         return 0;
     }
 
-    [RequiresUnreferencedCode("Uses reflection to access members of objects.")]
+    [RequiresUnreferencedCode(UsesReflection)]
+    [RequiresDynamicCode(UsesReflection)]
     private int MethodCallMetamethod(lua_State state)
     {
         try
@@ -393,6 +423,36 @@ public sealed class LuaObjectRegistry
         }
     }
 
+    [RequiresUnreferencedCode(UsesReflection)]
+    [RequiresDynamicCode(UsesReflection)]
+    private int DumpJsonMetamethod(lua_State state)
+    {
+        try
+        {
+            // Get the captured object ID from the closure
+            var objectId = (nint)LuaC.lua_tonumber(state, LuaC.lua_upvalueindex(1));
+
+            var dotnetObject = GetObject(objectId);
+
+            if (dotnetObject is null)
+            {
+                LuaC.lua_pushstring(state, "null");
+                return 1;
+            }
+
+            var json = JsonSerializer.Serialize(dotnetObject, jsonOptions);
+            LuaC.lua_pushstring(state, json);
+            return 1;
+        }
+        catch (Exception ex)
+        {
+            LuaC.lua_pushstring(state, $"Error in dumpJSON: {ex.Message}");
+            return LuaC.lua_error(state);
+        }
+    }
+
+    [RequiresUnreferencedCode(UsesReflection)]
+    [RequiresDynamicCode(UsesReflection)]
     private void PushValue(lua_State state, object? value)
     {
         switch (value)
@@ -451,6 +511,8 @@ public sealed class LuaObjectRegistry
         return LuaC.lua_tonumber(state, index);
     }
 
+    [RequiresUnreferencedCode(UsesReflection)]
+    [RequiresDynamicCode(UsesReflection)]
     private void CreateObjectUserData(lua_State state, object obj)
     {
         var objectId = RegisterObject(obj);
@@ -468,6 +530,8 @@ public sealed class LuaObjectRegistry
         LuaCAux.luaL_setmetatable(state, typeName);
     }
 
+    [RequiresUnreferencedCode(UsesReflection)]
+    [RequiresDynamicCode(UsesReflection)]
     private void CreateObjectUserData(object obj)
     {
         CreateObjectUserData(state, obj);
