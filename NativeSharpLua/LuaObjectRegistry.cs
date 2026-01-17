@@ -312,8 +312,7 @@ public sealed class LuaObjectRegistry
 
             if (dotnetObject is null)
             {
-                LuaC.lua_pushstring(state, "Invalid object reference");
-                return LuaC.lua_error(state);
+                throw new InvalidOperationException("Invalid object reference");
             }
 
             var type = dotnetObject.GetType();
@@ -324,8 +323,7 @@ public sealed class LuaObjectRegistry
 
             if (methods.Length == 0)
             {
-                LuaC.lua_pushstring(state, $"Method '{methodName}' not found.");
-                return LuaC.lua_error(state);
+                throw new MissingMethodException(methodName);
             }
 
             // Argument count includes the self object at index 1, so subtract 1 to get actual args
@@ -379,8 +377,7 @@ public sealed class LuaObjectRegistry
                 return 1;
             }
 
-            LuaC.lua_pushstring(state, $"No matching method '{methodName}' found for the given arguments.");
-            return LuaC.lua_error(state);
+            throw new Exception($"No matching method '{methodName}' found for the given arguments.");
         }
         catch (Exception ex)
         {

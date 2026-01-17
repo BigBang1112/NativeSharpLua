@@ -1,6 +1,6 @@
 ﻿using NativeSharpLua;
 
-var lua = new LuaEngine();
+var lua = new LuaEngine(LuaLibrary.Base, LuaLibrary.Base);
 
 lua.Run(@"
     function greet(name)
@@ -9,7 +9,7 @@ lua.Run(@"
     print(greet('World'))
 ");
 
-lua.RegisterObject(new TestObject(), "testObj");
+lua.ObjectRegistry.RegisterObject(new TestObject(), "testObj");
 
 lua.Run(@"
     print(testObj)
