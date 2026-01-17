@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="NativeSharpLua.Tests/NativeSharpLua.Tests.csproj" />
   <Project Path="NativeSharpLua/NativeSharpLua.csproj" />
+  <Project Path="Sample/Sample.csproj" Id="4685c3c9-e904-4687-bd2a-f7855ed00fc9" />
 </Solution>

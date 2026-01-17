@@ -54,4 +54,53 @@ public class LuaEngine
             throw new LuaException(LuaC.lua_tostring(state) ?? "Unknown error");
         }
     }
+
+    public bool NewMetatable(string name)
+    {
+        return LuaCAux.luaL_newmetatable(state, name) != 0;
+    }
+
+    /// <summary>
+    /// Registers a C# object in Lua with the given name
+    /// </summary>
+    /// <param name="obj">The C# object to register</param>
+    /// <param name="name">The global name in Lua</param>
+    public void RegisterObject(object obj, string name)
+    {
+        if (obj == null)
+        {
+            throw new ArgumentNullException(nameof(obj));
+        }
+
+        if (string.IsNullOrEmpty(name))
+        {
+            throw new ArgumentException("Name cannot be null or empty", nameof(name));
+        }
+
+        LuaObjectRegistry.CreateObjectUserData(state, obj);
+        LuaC.lua_setglobal(state, name);
+    }
+
+    /// <summary>
+    /// Creates a metatable for the specified C# type
+    /// </summary>
+    /// <param name="type">The C# type to create a metatable for</param>
+    public void RegisterType(Type type)
+    {
+        if (type == null)
+        {
+            throw new ArgumentNullException(nameof(type));
+        }
+
+        LuaObjectRegistry.CreateMetatable(state, type);
+    }
+
+    /// <summary>
+    /// Creates a metatable for the specified C# type
+    /// </summary>
+    /// <typeparam name="T">The C# type to create a metatable for</typeparam>
+    public void RegisterType<T>()
+    {
+        RegisterType(typeof(T));
+    }
 }

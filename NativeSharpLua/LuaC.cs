@@ -158,4 +158,39 @@ internal static partial class LuaC
 
     [LibraryImport(LibName)]
     public static partial nint lua_topointer(lua_State L, int index);
+
+    [LibraryImport(LibName)]
+    public static partial nint lua_newuserdatauv(lua_State L, nint size, int nuvalue = 1);
+
+    [LibraryImport(LibName)]
+    public static partial nint lua_touserdata(lua_State L, int index);
+
+    [LibraryImport(LibName)]
+    public static partial int lua_getmetatable(lua_State L, int index);
+
+    [LibraryImport(LibName)]
+    public static partial int lua_setmetatable(lua_State L, int index);
+
+    [LibraryImport(LibName, StringMarshalling = StringMarshalling.Utf8)]
+    public static partial LuaType lua_getfield(lua_State L, int index, string k);
+
+    [LibraryImport(LibName)]
+    public static partial LuaType lua_gettable(lua_State L, int index);
+
+    [LibraryImport(LibName)]
+    public static partial void lua_pushvalue(lua_State L, int index);
+
+    [LibraryImport(LibName)]
+    public static partial void lua_rawget(lua_State L, int index);
+
+    [LibraryImport(LibName, StringMarshalling = StringMarshalling.Utf8)]
+    public static partial void lua_rawgetfield(lua_State L, int index, string k);
+
+    [LibraryImport(LibName)]
+    public static partial void lua_rawset(lua_State L, int index);
+
+    [LibraryImport(LibName, StringMarshalling = StringMarshalling.Utf8)]
+    public static partial void lua_rawsetfield(lua_State L, int index, string k);
+    
+    public static int lua_upvalueindex(int i) => -(int.MaxValue / 2 + 1000) - i;
 }
