@@ -154,6 +154,7 @@ public sealed class LuaObjectRegistry
         if (LuaCAux.luaL_newmetatable(state, typeName) == 0)
         {
             // Metatable already exists
+            LuaC.lua_pop(state, 1);
             return;
         }
 
@@ -215,7 +216,8 @@ public sealed class LuaObjectRegistry
                 return 1;
             }
 
-            var key = LuaC.lua_tostring(state, 2);
+            var keyType = LuaC.lua_type(state, 2);
+            var key = keyType == LuaType.String ? LuaC.lua_tostring(state, 2) : null;
             var type = dotnetObject.GetType();
 
             if (!string.IsNullOrEmpty(key))
@@ -310,7 +312,8 @@ public sealed class LuaObjectRegistry
                 return 0;
             }
 
-            var key = LuaC.lua_tostring(state, 2);
+            var keyType = LuaC.lua_type(state, 2);
+            var key = keyType == LuaType.String ? LuaC.lua_tostring(state, 2) : null;
             var type = dotnetObject.GetType();
 
             if (!string.IsNullOrEmpty(key))
