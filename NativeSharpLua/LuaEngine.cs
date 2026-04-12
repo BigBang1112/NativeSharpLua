@@ -53,6 +53,9 @@ public class LuaEngine
     {
         var statusCode = LuaCAux.luaL_dostring(state, code);
 
+        // Check for managed exceptions that occurred inside Lua callbacks
+        ObjectRegistry.ThrowIfPendingException();
+
         if (statusCode != LuaStatusCode.Ok)
         {
             throw new LuaException(LuaC.lua_tostring(state) ?? "Unknown error");

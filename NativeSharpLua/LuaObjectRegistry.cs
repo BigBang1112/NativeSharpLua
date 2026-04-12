@@ -44,10 +44,27 @@ public sealed class LuaObjectRegistry
     private readonly ConcurrentDictionary<object, nint> objectIds = new(ReferenceEqualityComparer.Instance);
     private readonly ConcurrentDictionary<nint, int> objectRefCounts = new();
     private int nextId = 1;
+    private Exception? pendingException;
 
     internal LuaObjectRegistry(lua_State state)
     {
         this.state = state;
+    }
+
+    /// <summary>
+    /// If a managed exception occurred inside a Lua callback, re-throws it.
+    /// Called after every Lua execution to surface errors safely.
+    /// </summary>
+    internal void ThrowIfPendingException()
+    {
+        var ex = Interlocked.Exchange(ref pendingException, null);
+        if (ex is not null)
+            throw new LuaException(ex.Message, ex);
+    }
+
+    private void StorePendingException(Exception ex)
+    {
+        Interlocked.CompareExchange(ref pendingException, ex, null);
     }
 
     [RequiresUnreferencedCode(UsesReflection)]
@@ -286,8 +303,9 @@ public sealed class LuaObjectRegistry
         }
         catch (Exception ex)
         {
-            LuaC.lua_pushstring(state, $"Error in __index: {ex.Message}");
-            return LuaC.lua_error(state);
+            StorePendingException(ex);
+            LuaC.lua_pushnil(state);
+            return 1;
         }
     }
 
@@ -365,8 +383,8 @@ public sealed class LuaObjectRegistry
         }
         catch (Exception ex)
         {
-            LuaC.lua_pushstring(state, $"Error in __newindex: {ex.Message}");
-            return LuaC.lua_error(state);
+            StorePendingException(ex);
+            return 0;
         }
     }
 
@@ -472,8 +490,9 @@ public sealed class LuaObjectRegistry
         }
         catch (Exception ex)
         {
-            LuaC.lua_pushstring(state, $"Error in __len: {ex.Message}");
-            return LuaC.lua_error(state);
+            StorePendingException(ex);
+            LuaC.lua_pushinteger(state, 0);
+            return 1;
         }
     }
 
@@ -514,8 +533,11 @@ public sealed class LuaObjectRegistry
         }
         catch (Exception ex)
         {
-            LuaC.lua_pushstring(state, $"Error in __pairs: {ex.Message}");
-            return LuaC.lua_error(state);
+            StorePendingException(ex);
+            LuaC.lua_pushcfunction(state, _ => { LuaC.lua_pushnil(_); return 1; });
+            LuaC.lua_pushnil(state);
+            LuaC.lua_pushnil(state);
+            return 3;
         }
     }
 
@@ -567,8 +589,9 @@ public sealed class LuaObjectRegistry
         }
         catch (Exception ex)
         {
-            LuaC.lua_pushstring(state, $"Error in pairs iterator: {ex.Message}");
-            return LuaC.lua_error(state);
+            StorePendingException(ex);
+            LuaC.lua_pushnil(state);
+            return 1;
         }
     }
 
@@ -655,8 +678,8 @@ public sealed class LuaObjectRegistry
         }
         catch (Exception ex)
         {
-            LuaC.lua_pushstring(state, $"Error in method call: {ex.Message}");
-            return LuaC.lua_error(state);
+            StorePendingException(ex);
+            return 0;
         }
     }
 
@@ -683,8 +706,9 @@ public sealed class LuaObjectRegistry
         }
         catch (Exception ex)
         {
-            LuaC.lua_pushstring(state, $"Error in dumpJSON: {ex.Message}");
-            return LuaC.lua_error(state);
+            StorePendingException(ex);
+            LuaC.lua_pushnil(state);
+            return 1;
         }
     }
 
@@ -755,8 +779,8 @@ public sealed class LuaObjectRegistry
         }
         catch (Exception ex)
         {
-            LuaC.lua_pushstring(state, $"Error in static method call: {ex.Message}");
-            return LuaC.lua_error(state);
+            StorePendingException(ex);
+            return 0;
         }
     }
 
@@ -822,8 +846,9 @@ public sealed class LuaObjectRegistry
         }
         catch (Exception ex)
         {
-            LuaC.lua_pushstring(state, $"Error in constructor call: {ex.Message}");
-            return LuaC.lua_error(state);
+            StorePendingException(ex);
+            LuaC.lua_pushnil(state);
+            return 1;
         }
     }
 
