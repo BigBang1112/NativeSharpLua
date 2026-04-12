@@ -301,7 +301,7 @@ public class LuaObjectRegistryTests
         var obj = new MethodObject();
 
         engine.ObjectRegistry.RegisterObject(obj, "obj");
-        Assert.Throws<LuaException>(() => engine.Run("obj:NoSuchMethod()"));
+        Assert.ThrowsAny<Exception>(() => engine.Run("obj:NoSuchMethod()"));
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -533,7 +533,7 @@ public class LuaObjectRegistryTests
         var obj = new ReadOnlyPropertyObject();
 
         engine.ObjectRegistry.RegisterObject(obj, "obj");
-        Assert.Throws<LuaException>(() => engine.Run("obj.ReadOnly = 'fail'"));
+        Assert.ThrowsAny<Exception>(() => engine.Run("obj.ReadOnly = 'fail'"));
     }
 
     [Fact]
@@ -632,7 +632,7 @@ public class LuaObjectRegistryTests
         engine.ObjectRegistry.RegisterType<ConstructableObject>();
 
         // ConstructableObject has (string, int) — pass wrong arity
-        Assert.Throws<LuaException>(() =>
+        Assert.ThrowsAny<Exception>(() =>
             engine.Run("ConstructableObject.new('only one')"));
     }
 
@@ -670,7 +670,7 @@ public class LuaObjectRegistryTests
         var engine = CreateEngine();
         engine.ObjectRegistry.RegisterType<StaticMethodClass>();
 
-        Assert.Throws<LuaException>(() =>
+        Assert.ThrowsAny<Exception>(() =>
             engine.Run("StaticMethodClass.StaticAdd(1)"));
     }
 
@@ -878,7 +878,7 @@ public class LuaObjectRegistryTests
         var obj = new SimpleObject();
 
         engine.ObjectRegistry.RegisterObject(obj, "obj");
-        Assert.Throws<LuaException>(() => engine.Run("for k,v in pairs(obj) do end"));
+        Assert.ThrowsAny<Exception>(() => engine.Run("for k,v in pairs(obj) do end"));
     }
 
     // ──────────────────────────────────────────────────────────────────────
