@@ -27,7 +27,30 @@ public class LuaEngine
         return 0;
     };
 
+    public static readonly lua_CFunction DefaultWarnFunc = state =>
+    {
+        var n = LuaC.lua_gettop(state);
+
+        if (n == 0)
+            return 0;
+
+        // Check for control messages (first arg starting with '@')
+        var first = LuaC.lua_tostring(state, 1);
+        if (first is not null && first.StartsWith('@'))
+            return 0; // Ignore control messages like @on/@off
+
+        for (var i = 1; i <= n; i++)
+        {
+            Console.Error.Write(LuaC.lua_tostring(state, i));
+        }
+
+        Console.Error.WriteLine();
+
+        return 0;
+    };
+
     public lua_CFunction PrintFunc { get; init; } = DefaultPrintFunc;
+    public lua_CFunction WarnFunc { get; init; } = DefaultWarnFunc;
 
     public LuaObjectRegistry ObjectRegistry { get; }
 
@@ -47,6 +70,7 @@ public class LuaEngine
     private void Register()
     {
         LuaC.lua_register(state, "print", PrintFunc);
+        LuaC.lua_register(state, "warn", WarnFunc);
     }
 
     public void Run(string code)
