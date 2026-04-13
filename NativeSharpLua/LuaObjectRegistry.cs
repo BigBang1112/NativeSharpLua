@@ -112,12 +112,19 @@ public sealed class LuaObjectRegistry
 
     [RequiresUnreferencedCode(UsesReflection)]
     [RequiresDynamicCode(UsesReflection)]
-    public void RegisterObject(object obj, string name)
+    public void RegisterObject(object? obj, string name)
     {
-        ArgumentNullException.ThrowIfNull(obj);
         ArgumentException.ThrowIfNullOrEmpty(name);
 
-        CreateObjectUserData(obj);
+        if (obj is null)
+        {
+            LuaC.lua_pushnil(state);
+        }
+        else
+        {
+            CreateObjectUserData(obj);
+        }
+
         LuaC.lua_setglobal(state, name);
     }
 

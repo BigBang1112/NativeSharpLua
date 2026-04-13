@@ -63,12 +63,16 @@ public class LuaObjectRegistryTests
     }
 
     [Fact]
-    public void RegisterObject_NullObject_Throws()
+    public void RegisterObject_NullObject_RegistersAsNil()
     {
-        var engine = CreateEngine();
+        var engine = CreateEngineWithBase();
+        var capture = new CaptureHelper();
 
-        Assert.Throws<ArgumentNullException>(() =>
-            engine.ObjectRegistry.RegisterObject(null!, "x"));
+        engine.ObjectRegistry.RegisterObject(null, "x");
+        engine.ObjectRegistry.RegisterObject(capture, "cap");
+
+        engine.Run("cap:SetBool(x == nil)");
+        Assert.True(capture.BoolValue);
     }
 
     // ──────────────────────────────────────────────────────────────────────
