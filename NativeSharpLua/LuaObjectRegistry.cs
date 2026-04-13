@@ -45,10 +45,15 @@ public sealed class LuaObjectRegistry
     private readonly ConcurrentDictionary<nint, int> objectRefCounts = new();
     private int nextId = 1;
     private Exception? pendingException;
+    private readonly lua_CFunction nilIterator;
+
+    // Kept as a field to prevent GC collection while Lua holds the function pointer
+    private int NilIterator(lua_State _) { LuaC.lua_pushnil(_); return 1; }
 
     internal LuaObjectRegistry(lua_State state)
     {
         this.state = state;
+        nilIterator = NilIterator;
     }
 
     /// <summary>
@@ -293,9 +298,18 @@ public sealed class LuaObjectRegistry
                 if (indexKey is not null && !paramType.IsAssignableFrom(indexKey.GetType()))
                     continue;
 
-                var result = indexer.GetValue(dotnetObject, [indexKey]);
-                PushValue(state, result);
-                return 1;
+                try
+                {
+                    var result = indexer.GetValue(dotnetObject, [indexKey]);
+                    PushValue(state, result);
+                    return 1;
+                }
+                catch (TargetInvocationException ex) when (ex.InnerException is ArgumentOutOfRangeException or IndexOutOfRangeException)
+                {
+                    // Out-of-range access is normal during ipairs iteration — return nil to signal end
+                    LuaC.lua_pushnil(state);
+                    return 1;
+                }
             }
 
             LuaC.lua_pushnil(state);
@@ -375,7 +389,14 @@ public sealed class LuaObjectRegistry
                     continue;
 
                 var value = PopValue(state, 3, indexer.PropertyType);
-                indexer.SetValue(dotnetObject, value, [indexKey]);
+                try
+                {
+                    indexer.SetValue(dotnetObject, value, [indexKey]);
+                }
+                catch (TargetInvocationException ex) when (ex.InnerException is ArgumentOutOfRangeException or IndexOutOfRangeException)
+                {
+                    return 0;
+                }
                 return 0;
             }
 
@@ -534,7 +555,7 @@ public sealed class LuaObjectRegistry
         catch (Exception ex)
         {
             StorePendingException(ex);
-            LuaC.lua_pushcfunction(state, _ => { LuaC.lua_pushnil(_); return 1; });
+            LuaC.lua_pushcfunction(state, nilIterator);
             LuaC.lua_pushnil(state);
             LuaC.lua_pushnil(state);
             return 3;

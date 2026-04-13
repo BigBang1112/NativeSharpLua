@@ -523,6 +523,60 @@ public class LuaObjectRegistryTests
     }
 
     // ──────────────────────────────────────────────────────────────────────
+    // Out-of-range indexer access
+    // ──────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void RegisterObject_ListIndexer_OutOfRange_ReturnsNil()
+    {
+        var engine = CreateEngineWithBase();
+        var list = new List<string> { "a", "b" };
+        var capture = new CaptureHelper();
+
+        engine.ObjectRegistry.RegisterObject(list, "lst");
+        engine.ObjectRegistry.RegisterObject(capture, "cap");
+
+        // Out-of-range read must return nil, not throw
+        engine.Run("cap:SetBool(lst[99] == nil)");
+        Assert.True(capture.BoolValue);
+    }
+
+    [Fact]
+    public void RegisterObject_ListIndexer_IPairs_CompletesWithoutException()
+    {
+        var engine = CreateEngineWithBase();
+        // Previously, ipairs probing one past the end surfaced an ArgumentOutOfRangeException
+        var list = new List<int> { 10, 20, 30 };
+        var capture = new CaptureHelper();
+
+        engine.ObjectRegistry.RegisterObject(list, "lst");
+        engine.ObjectRegistry.RegisterObject(capture, "cap");
+
+        engine.Run(@"
+            local sum = 0
+            for i, v in ipairs(lst) do
+                sum = sum + v
+            end
+            cap:SetInt(sum)
+        ");
+        // ipairs starts at Lua key 1 which maps to C# index 1 (0-based), so sees list[1]=20 and list[2]=30
+        Assert.Equal(50, capture.IntValue);
+    }
+
+    [Fact]
+    public void RegisterObject_ListIndexer_OutOfRangeWrite_DoesNotThrow()
+    {
+        var engine = CreateEngine();
+        var list = new List<string> { "a", "b" };
+
+        engine.ObjectRegistry.RegisterObject(list, "lst");
+
+        // Out-of-range write must fail silently, not surface as LuaException
+        engine.Run("lst[99] = 'x'");
+        Assert.Equal(2, list.Count);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
     // Read-only property
     // ──────────────────────────────────────────────────────────────────────
 
