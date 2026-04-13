@@ -167,6 +167,45 @@ public sealed class LuaObjectRegistry
         return true;
     }
 
+    // Walk the hierarchy from most-derived to base so that hiding/overriding members
+    // (declared with 'new') take precedence over base-class definitions.
+    
+    [RequiresUnreferencedCode(UsesReflection)]
+    private static PropertyInfo? FindProperty(Type type, string name)
+    {
+        for (var t = type; t != null; t = t.BaseType)
+        {
+            var p = t.GetProperty(name, BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+            if (p != null) return p;
+        }
+        return null;
+    }
+
+    [RequiresUnreferencedCode(UsesReflection)]
+    private static FieldInfo? FindField(Type type, string name)
+    {
+        for (var t = type; t != null; t = t.BaseType)
+        {
+            var f = t.GetField(name, BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+            if (f != null) return f;
+        }
+        return null;
+    }
+
+    [RequiresUnreferencedCode(UsesReflection)]
+    private static MethodInfo[] FindMethods(Type type, string? name, BindingFlags flags)
+    {
+        var instanceFlags = flags | BindingFlags.DeclaredOnly;
+        for (var t = type; t != null; t = t.BaseType)
+        {
+            var methods = t.GetMethods(instanceFlags)
+                .Where(m => m.Name == name)
+                .ToArray();
+            if (methods.Length > 0) return methods;
+        }
+        return [];
+    }
+
     [RequiresUnreferencedCode(UsesReflection)]
     [RequiresDynamicCode(UsesReflection)]
     private void CreateMetatable(Type type)
@@ -254,7 +293,7 @@ public sealed class LuaObjectRegistry
                 }
 
                 // Try to find property first
-                var property = type.GetProperty(key, BindingFlags.Public | BindingFlags.Instance);
+                var property = FindProperty(type, key);
                 if (property?.CanRead == true)
                 {
                     var value = property.GetValue(dotnetObject);
@@ -263,7 +302,7 @@ public sealed class LuaObjectRegistry
                 }
 
                 // Try to find field
-                var field = type.GetField(key, BindingFlags.Public | BindingFlags.Instance);
+                var field = FindField(type, key);
                 if (field is not null)
                 {
                     var value = field.GetValue(dotnetObject);
@@ -272,9 +311,7 @@ public sealed class LuaObjectRegistry
                 }
 
                 // Try to find method(s)
-                var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                    .Where(m => m.Name == key)
-                    .ToArray();
+                var methods = FindMethods(type, key, BindingFlags.Public | BindingFlags.Instance);
 
                 if (methods.Length > 0)
                 {
@@ -351,7 +388,7 @@ public sealed class LuaObjectRegistry
             if (!string.IsNullOrEmpty(key))
             {
                 // Try to find property
-                var property = type.GetProperty(key, BindingFlags.Public | BindingFlags.Instance);
+                var property = FindProperty(type, key);
                 if (property is not null)
                 {
                     if (property.CanWrite)
@@ -367,7 +404,7 @@ public sealed class LuaObjectRegistry
                 }
 
                 // Try to find field
-                var field = type.GetField(key, BindingFlags.Public | BindingFlags.Instance);
+                var field = FindField(type, key);
                 if (field != null)
                 {
                     var value = PopValue(state, 3, field.FieldType);
@@ -635,9 +672,7 @@ public sealed class LuaObjectRegistry
 
             var type = dotnetObject.GetType();
 
-            var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                .Where(m => m.Name == methodName)
-                .ToArray();
+            var methods = FindMethods(type, methodName, BindingFlags.Public | BindingFlags.Instance);
 
             if (methods.Length == 0)
             {
@@ -745,9 +780,7 @@ public sealed class LuaObjectRegistry
             if (string.IsNullOrEmpty(typeName) || !registeredTypes.TryGetValue(typeName, out var type))
                 throw new InvalidOperationException("Static method called for an unregistered type.");
 
-            var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static)
-                .Where(m => m.Name == methodName)
-                .ToArray();
+            var methods = FindMethods(type, methodName, BindingFlags.Public | BindingFlags.Static);
 
             if (methods.Length == 0)
                 throw new MissingMethodException(type.Name, methodName);
